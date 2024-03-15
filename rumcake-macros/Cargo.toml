@@ -15,8 +15,11 @@ quote = "1.0"
 heck = "0.4.1"
 
 [dev-dependencies]
-keyberon = { git = "https://github.com/TeXitoi/keyberon", branch = "master" }
-embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", features = ["defmt", "memory-x", "stm32f303cb", "nightly", "time-driver-any", "exti"] }
+# keyberon = { git = "https://github.com/TeXitoi/keyberon", branch = "master" }
+# embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", features = ["defmt", "memory-x", "stm32f303cb", "nightly", "time-driver-any", "exti"] }
+
+keyberon = { path = "../keyberon" }
+embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", rev = "7703f47", features = ["defmt", "memory-x", "stm32f303cb", "time-driver-any", "exti"] }
 
 [features]
 stm32 = []
