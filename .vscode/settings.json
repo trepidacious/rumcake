@@ -1,0 +1,4 @@
+{
+  "rust-analyzer.cargo.features": ["rp2040", "usb"],
+  "rust-analyzer.cargo.target": "thumbv6m-none-eabi",
+}
