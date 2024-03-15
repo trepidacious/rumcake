@@ -48,6 +48,7 @@ embassy-usb = { git = "https://github.com/embassy-rs/embassy", rev = "7703f47", 
 embassy-stm32 = { git = "https://github.com/embassy-rs/embassy", rev = "7703f47", features = ["defmt", "unstable-pac"], optional = true }
 embassy-nrf = { git = "https://github.com/embassy-rs/embassy", rev = "7703f47", features = ["defmt", "nfc-pins-as-gpio", "time-driver-rtc1"], optional = true }
 nrf-softdevice = { git = "https://github.com/embassy-rs/nrf-softdevice", rev = "487f98e", optional = true }
+embassy-rp = { git = "https://github.com/embassy-rs/embassy", rev = "7703f47", features = ["defmt", "unstable-pac", "time-driver", "critical-section-impl"], optional = true }
 tickv = { git = "https://github.com/tock/tock", rev = "18cf287" }
 keyberon = { path = "../keyberon" }
 once_cell = { version = "1.18.0", features = ["atomic-polyfill"], default-features = false }
@@ -90,6 +91,14 @@ drivers = []
 stm32 = ["dep:cortex-m", "embassy-executor/arch-cortex-m", "dep:embassy-stm32", "rumcake-macros/stm32"]
 stm32f072cb = ["stm32", "embassy-stm32/stm32f072cb", "embassy-stm32/time-driver-any"]
 stm32f303cb = ["stm32", "embassy-stm32/stm32f303cb", "embassy-stm32/time-driver-any"]
+
+# TODO - do we need features = ["inline-asm"] for "dep:cortex-m"?
+rp2040 = [
+  "dep:cortex-m",
+  "embassy-executor/arch-cortex-m",
+  "dep:embassy-rp",
+  "rumcake-macros/rp2040",
+]
 
 # nRF5x
 nrf = ["dep:cortex-m", "embassy-executor/arch-cortex-m", "dep:embassy-nrf", "rumcake-macros/nrf"]

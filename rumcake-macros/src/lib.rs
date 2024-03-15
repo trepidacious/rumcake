@@ -210,6 +210,7 @@ pub fn is31fl3731_get_led_from_rgb_matrix_coordinates(
 
 #[cfg_attr(feature = "stm32", path = "hw/stm32.rs")]
 #[cfg_attr(feature = "nrf", path = "hw/nrf.rs")]
+#[cfg_attr(feature = "rp2040", path = "hw/rp2040.rs")]
 mod hw;
 
 #[proc_macro]
