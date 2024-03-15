@@ -37,6 +37,14 @@ The `rumcake` library:
 `rumcake` uses some Rust features that are only found on the `nightly` toolchain.
 Please use the latest nightly toolchain when compiling your firmware.
 
+## Building
+
+Make sure to specify a feature for your MCU, and a target, e.g.:
+
+```bash
+cargo build --features rp2040 --target thumbv6m-none-eabi
+```
+
 ## MCUs
 
 Note that building and flashing instructions may change depending on the MCU.
