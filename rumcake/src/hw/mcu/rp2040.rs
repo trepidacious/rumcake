@@ -5,11 +5,10 @@
 //! hardware-agnostic.
 
 use core::fmt::Debug;
-use embassy_rp::bind_interrupts;
+use embassy_rp::{bind_interrupts, flash};
 use embassy_rp::flash::{Blocking, Flash as HALFlash};
 use embassy_rp::i2c::I2c;
 use embassy_rp::peripherals::{FLASH, USB};
-use embassy_rp::time::Hertz;
 use embassy_rp::usb::Driver;
 use embedded_hal::blocking::i2c::Write;
 use embedded_hal_async::i2c::I2c as AsyncI2c;
@@ -24,6 +23,9 @@ pub use rumcake_macros::{input_pin, output_pin, setup_i2c};
 pub use embassy_rp;
 
 pub const SYSCLK: u32 = 133_000_000;
+
+// TODO use a setting in Keyboard? 2M is pretty safe for RP2040 boards?
+const FLASH_SIZE: usize = 2 * 1024 * 1024;
 
 /// A function that allows you to jump to the bootloader, usually for re-flashing the firmware.
 pub fn jump_to_bootloader() {
@@ -50,7 +52,7 @@ pub fn setup_usb_driver<K: crate::usb::USBKeyboard>(
     unsafe {
         bind_interrupts!(
             struct Irqs {
-                USB => embassy_rp::usb::InterruptHandler<embassy_rp::peripherals::USB>;
+                USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<embassy_rp::peripherals::USB>;
             }
         );
 
@@ -90,7 +92,7 @@ pub fn setup_usb_driver<K: crate::usb::USBKeyboard>(
 /// A wrapper around the [`embassy_stm32::Flash`] struct. This implements
 /// [`embedded_storage_async`] traits so that it can work with the [`crate::storage`] system.
 pub struct Flash {
-    flash: HALFlash<'static, Blocking>,
+    flash: HALFlash<'static, FLASH, flash::Blocking, FLASH_SIZE>,
 }
 
 impl ErrorType for Flash {
@@ -98,7 +100,7 @@ impl ErrorType for Flash {
 }
 
 impl AsyncReadNorFlash for Flash {
-    const READ_SIZE: usize = <HALFlash as ReadNorFlash>::READ_SIZE;
+    const READ_SIZE: usize = embassy_rp::flash::READ_SIZE;
 
     async fn read(&mut self, offset: u32, bytes: &mut [u8]) -> Result<(), Self::Error> {
         self.flash.read(offset, bytes)
@@ -110,9 +112,9 @@ impl AsyncReadNorFlash for Flash {
 }
 
 impl AsyncNorFlash for Flash {
-    const WRITE_SIZE: usize = <HALFlash as embedded_storage::nor_flash::NorFlash>::WRITE_SIZE;
+    const WRITE_SIZE: usize = embassy_rp::flash::WRITE_SIZE;
 
-    const ERASE_SIZE: usize = <HALFlash as embedded_storage::nor_flash::NorFlash>::ERASE_SIZE;
+    const ERASE_SIZE: usize = embassy_rp::flash::ERASE_SIZE;
 
     async fn erase(&mut self, from: u32, to: u32) -> Result<(), Self::Error> {
         self.flash.erase(from, to)
@@ -136,15 +138,16 @@ macro_rules! setup_uart_reader {
     ($interrupt:ident, $uart:ident, $rx:ident, $rxdma:ident) => {
         fn setup_uart_reader() -> impl $crate::embedded_io_async::Read<Error = impl core::fmt::Debug> {
             unsafe {
-                $crate::hw::mcu::embassy_stm32::bind_interrupts! {
+                $crate::hw::mcu::embassy_rp::bind_interrupts! {
                     struct Irqs {
-                        $interrupt => $crate::hw::mcu::embassy_stm32::usart::InterruptHandler<$crate::hw::mcu::embassy_stm32::peripherals::$uart>;
+                        $interrupt => $crate::hw::mcu::embassy_rp::uart::BufferedInterruptHandler<$crate::hw::mcu::embassy_rp::peripherals::$uart>;
                     }
                 };
-                let uart = $crate::hw::mcu::embassy_stm32::peripherals::$uart::steal();
-                let rx = $crate::hw::mcu::embassy_stm32::peripherals::$rx::steal();
-                let rx_dma = $crate::hw::mcu::embassy_stm32::peripherals::$rxdma::steal();
-                $crate::hw::mcu::embassy_stm32::usart::UartRx::new(uart, Irqs, rx, rx_dma, Default::default()).into_ring_buffered(&mut [0; 32]);
+                let uart = $crate::hw::mcu::embassy_rp::peripherals::$uart::steal();
+                // TODO - assuming this is the pin?
+                let rx = $crate::hw::mcu::embassy_rp::peripherals::$rx::steal();
+                let rx_dma = $crate::hw::mcu::embassy_rp::peripherals::$rxdma::steal();
+                $crate::hw::mcu::embassy_rp::uart::UartRx::new(uart, rx, Irqs, rx_dma, embassy_rp::uart::Config::default()).into_ring_buffered(&mut [0; 32]);
             }
         }
     };
@@ -156,14 +159,15 @@ macro_rules! setup_uart_writer {
         fn setup_uart_writer(
         ) -> impl $crate::embedded_io_async::Write<Error = impl core::fmt::Debug> {
             unsafe {
-                let uart = $crate::hw::mcu::embassy_stm32::peripherals::$uart::steal();
-                let tx = $crate::hw::mcu::embassy_stm32::peripherals::$tx::steal();
-                let tx_dma = $crate::hw::mcu::embassy_stm32::peripherals::$txdma::steal();
-                $crate::hw::mcu::embassy_stm32::usart::UartTx::new(
+                let uart = $crate::hw::mcu::embassy_rp::peripherals::$uart::steal();
+                // TODO - assuming this is the pin?
+                let tx = $crate::hw::mcu::embassy_rp::peripherals::$tx::steal();
+                let tx_dma = $crate::hw::mcu::embassy_rp::peripherals::$txdma::steal();
+                $crate::hw::mcu::embassy_rp::uart::UartTx::new(
                     uart,
                     tx,
                     tx_dma,
-                    Default::default(),
+                    embassy_rp::uart::Config::default(),
                 )
             }
         }
