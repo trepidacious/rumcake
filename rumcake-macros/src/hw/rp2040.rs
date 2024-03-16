@@ -24,8 +24,7 @@ pub fn output_pin(ident: Ident) -> TokenStream {
                 ::rumcake::hw::mcu::embassy_rp::gpio::Pin::degrade(
                     ::rumcake::hw::mcu::embassy_rp::peripherals::#ident::steal(),
                 ),
-                ::rumcake::hw::mcu::embassy_rp::gpio::Level::High,
-                ::rumcake::hw::mcu::embassy_rp::gpio::Speed::Low,
+                ::rumcake::hw::mcu::embassy_rp::gpio::Level::High
             )
         }
     }
