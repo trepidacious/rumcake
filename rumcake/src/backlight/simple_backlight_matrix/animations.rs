@@ -223,13 +223,13 @@ where
             BacklightCommand::NextEffect => {
                 while {
                     self.config.effect.increment();
-                    self.config.effect.is_enabled::<K>()
+                    !self.config.effect.is_enabled::<K>()
                 } {}
             }
             BacklightCommand::PrevEffect => {
                 while {
                     self.config.effect.decrement();
-                    self.config.effect.is_enabled::<K>()
+                    !self.config.effect.is_enabled::<K>()
                 } {}
             }
             BacklightCommand::SetEffect(effect) => {
